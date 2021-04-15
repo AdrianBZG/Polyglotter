@@ -1,0 +1,19 @@
+version: '3'
+
+services:
+
+  mysql-development:
+    container_name: nlp_mysql
+    restart: always
+    image: mysql:5.7
+    environment:
+      MYSQL_USER: 'test'
+      MYSQL_ROOT_PASSWORD: 'test'
+      MYSQL_DATABASE: 'test'
+      MYSQL_PAS: 'test'
+    volumes:
+      - nlp-mysql-datavolume:/var/lib/mysql
+    ports:
+      - "3308:3306"
+volumes:
+  nlp-mysql-datavolume:
