@@ -1,0 +1,13 @@
+pygments==2.4.1
+nlpaug
+numpy
+python-dotenv
+mysql-connector
+opennmt-py==1.2.0
+jupyter
+matplotlib
+networkx
+nltk>=3.4.5
+transformers>=2.5.0
+sklearn
+flask
