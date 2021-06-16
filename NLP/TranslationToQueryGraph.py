@@ -52,6 +52,23 @@ class TranslationToQueryGraph:
 
     def obtainSentenceModelPrediction(self, inputSentence = "Give me productDescription, priceEach from products, orderdetails where productLine < vLhMbeQtA, quantityOrdered < zNlseUUZQIaVBnmH", n_best=1, beam_size=5, modelCheckpoint='1000'):
         try:
+            # First get t he schema in-place to do the appropriate replacements
+            schemaMetadata = self.schema['graph']
+    
+            # Re-label to lower the nodes
+            nodelist = schemaMetadata.nodes()
+
+            classNameMap = dict()
+            for nodelabel in nodelist:
+                classNameMap[nodelabel.lower()] = nodelabel
+            
+            attributeNameMap = dict()
+
+            for nodelabel in nodelist:
+                attributeList = self.schema['schema'][nodelabel.lower()]["attributes"]
+                for attribute in attributeList:
+                    attributeNameMap[attribute.lower()] = attribute
+
             # Create temp file for the translation
             inputSentence = inputSentence.lower()
             tempFile = self.create_tmp_file(inputSentence)
@@ -71,6 +88,9 @@ class TranslationToQueryGraph:
                 lines = f.readlines()
                 for line in lines:
                     line = line.strip().rstrip()
+                    line = ' '.join([classNameMap.get(i, i) for i in line.split()])
+                    line = ' '.join([attributeNameMap.get(i, i) for i in line.split()])
+                    
                     try:
                         prediction = {"original_query": inputSentence, "prediction":{"raw":"", "attributes":list(), "classes": list(), "constraints": list()}}
                         prediction["prediction"]["raw"] = line
