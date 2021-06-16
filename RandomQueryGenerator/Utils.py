@@ -352,7 +352,10 @@ def queryGraphToEnglish(queryGraph):
             englishQuery = englishQuery[:-1]
 
         constraint_text = ""
-        for node in queryGraph.nodes(): 
+        classConstraints = dict()
+        
+        for node in queryGraph.nodes():
+            classConstraints[node] = list()
             for constraint in queryGraph.nodes[node]["constraints"]:
                 if constraint not in classConstraints[node]:
                     classConstraints[node].append(constraint)

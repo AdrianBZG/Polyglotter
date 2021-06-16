@@ -6,7 +6,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import sys
 sys.path.append('../RandomQueryGenerator')
-from Utils import queryGraphToEnglish, queryGraphToDBQuery
+from Utils import queryGraphToEnglish
 
 # General get DB schema abstract class 
 class TranslationToQueryGraph:
@@ -65,38 +65,37 @@ class TranslationToQueryGraph:
             self.delete_tmp_file(tempFile)
 
             # Read the output
-            translationAttributesSet = list()
-            translationClassesSet = list()
-            translationConstraintsSet = list()
-            translationFull = list()
+            predictions = list()
 
             with open(self.translationsOutputDir + "translation.out") as f:
                 lines = f.readlines()
                 for line in lines:
+                    line = line.strip().rstrip()
                     try:
-                        lineAttributes = line.split("|")[0].strip()
-                        lineClasses = line.split("|")[1].strip()
-                        lineConstraints = line.split("|")[2].strip()
+                        prediction = {"original_query": inputSentence, "prediction":{"raw":"", "attributes":list(), "classes": list(), "constraints": list()}}
+                        prediction["prediction"]["raw"] = line
+                        triplesAndTuples = line.split(";")
 
-                        translationAttributesSet.append([tr.strip() for tr in lineAttributes.strip().split(" ")])
-                        translationClassesSet.append([tr.strip() for tr in lineClasses.strip().split(" ")])
-                        translationConstraintsSet.append([tr.strip() + " @constraint_value" for tr in lineConstraints.strip().split("@constraint_value") if len(tr) > 2])
+                        for element in triplesAndTuples:
+                            elementSplit = element.strip().rstrip().split(" ")
 
-                        translationFull.append(line)
-
+                            # Is constraint?
+                            if len(elementSplit) > 2:
+                                prediction["prediction"]["constraints"].append(element.strip())
+                            else:
+                                prediction["prediction"]["attributes"].append(elementSplit[0].strip())
+                                prediction["prediction"]["classes"].append(elementSplit[1].strip())
+                            
+                        predictions.append(prediction)
                     except Exception as e:
                         print(e)
         except Exception as e:
             print(e)
 
-        return translationAttributesSet, translationClassesSet, translationConstraintsSet, translationFull
+        return predictions
 
     def obtainQueryGraph(self, modelPredictions, debug=False):
-        queryGraphs = list()
-
-        translationAttributesSet = modelPredictions[0]
-        translationClassesSet = modelPredictions[1]
-        translationConstraintsSet = modelPredictions[2]
+        queryGraphs = list()        
 
         schemaMetadata = self.schema['schema']
         schemaClassConnectivityGraph = self.schema['graph']
@@ -111,24 +110,28 @@ class TranslationToQueryGraph:
 
         print("Is minimum spanning tree of schema graph connected?: " + str(nx.is_connected(spanning_tree)))
 
-        for inx, translation in enumerate(translationAttributesSet):
+        for inx, translation in enumerate(modelPredictions):
+            translationAttributesSet = translation["prediction"]["attributes"]
+            translationClassesSet = translation["prediction"]["classes"]
+            translationConstraintsSet = translation["prediction"]["constraints"]
+
             print("\n==========Obtaining Query Graph for Candidate #" + str(inx+1) + "=============")
             # Find shortest path from the classes in the query to check from the connectivityness of the query
             queryGraph = nx.DiGraph()
             queryGraph.clear()
 
             try:
-                for i in range (0,len(translationClassesSet[inx])-1):
-                    minPath = nx.bidirectional_shortest_path(spanning_tree, translationClassesSet[inx][i], translationClassesSet[inx][i+1])
+                for i in range (0,len(translationClassesSet)-1):
+                    minPath = nx.bidirectional_shortest_path(spanning_tree, translationClassesSet[i], translationClassesSet[i+1])
                     
                     for j in range (0,len(minPath)-1):
                         queryGraph.add_edge(minPath[j], minPath[j+1])
             except nx.exception.NetworkXNoPath as e:
-                print("No path was found between " + translationClassesSet[inx][i] + " and " + translationClassesSet[inx][i+1] + ". Skipping query graph creation.")
+                print("No path was found between " + translationClassesSet[i] + " and " + translationClassesSet[i+1] + ". Skipping query graph creation.")
                 queryGraphs.append("")
                 continue
             except nx.exception.NodeNotFound:
-                print("Either " + translationClassesSet[inx][i] + " or " + translationClassesSet[inx][i+1] + " predicted classes were not found in the DB schema. Skipping query graph creation.")
+                print("Either " + translationClassesSet[i] + " or " + translationClassesSet[i+1] + " predicted classes were not found in the DB schema. Skipping query graph creation.")
                 queryGraphs.append("")
                 continue
             except Exception as e:
@@ -150,18 +153,18 @@ class TranslationToQueryGraph:
                 # Attributes and constraints for each class given the query
                 queryGraph.nodes[node]["attributes_show"] = list()
                 queryGraph.nodes[node]["constraints"] = list()
-                translationConstraintsLeftPart = [x.split(" ")[0] for x in translationConstraintsSet[inx]]
+                translationConstraintsLeftPart = [x.split(" ")[0] for x in translationConstraintsSet]
                 
                 nodeAttributes = schemaMetadata[node]["attributes"]
 
                 for attribute in nodeAttributes:
-                    if attribute.lower() in translationAttributesSet[inx] and attribute.lower() not in attributesAlreadyUsed:
+                    if attribute.lower() in translationAttributesSet and attribute.lower() not in attributesAlreadyUsed:
                         queryGraph.nodes[node]["attributes_show"].append(attribute.lower())
                         attributesAlreadyUsed.add(attribute.lower())
-                    if attribute.lower() in translationConstraintsLeftPart and translationConstraintsSet[inx][translationConstraintsLeftPart.index(attribute.lower())] not in constraintsAlreadyUsed:
-                        constraintToAnnotate = translationConstraintsSet[inx][translationConstraintsLeftPart.index(attribute.lower())]
+                    if attribute.lower() in translationConstraintsLeftPart and translationConstraintsSet[translationConstraintsLeftPart.index(attribute.lower())] not in constraintsAlreadyUsed:
+                        constraintToAnnotate = translationConstraintsSet[translationConstraintsLeftPart.index(attribute.lower())]
                         queryGraph.nodes[node]["constraints"].append(constraintToAnnotate)
-                        constraintsAlreadyUsed.add(translationConstraintsSet[inx][translationConstraintsLeftPart.index(attribute.lower())])
+                        constraintsAlreadyUsed.add(translationConstraintsSet[translationConstraintsLeftPart.index(attribute.lower())])
 
             queryGraphs.append(queryGraph.copy())
 
@@ -175,13 +178,13 @@ class TranslationToQueryGraph:
         print("The English generated from the query graph is: " + englishQuery)
         return englishQuery
 
-    def getDBQueryFromQueryGraph(self, queryGraph, showGraph=False):
-        if showGraph:
-            self.displayGraph(queryGraph)
-
-        dbQuery = queryGraphToDBQuery(queryGraph)
-        print("The DB query generated from the query graph is: " + dbQuery)
-        return dbQuery
+    #def getDBQueryFromQueryGraph(self, queryGraph, showGraph=False):
+    #    if showGraph:
+    #        self.displayGraph(queryGraph)
+    #
+    #    dbQuery = queryGraphToDBQuery(queryGraph)
+    #    print("The DB query generated from the query graph is: " + dbQuery)
+    #    return dbQuery
     
 
     def displayGraph(self, graph):
