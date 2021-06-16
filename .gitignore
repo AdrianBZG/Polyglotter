@@ -130,6 +130,7 @@ NLP/Training/*
 # Old files
 RandomQueryGenerator/Patients*
 Plotting/*
+Data/WikiSQL/*
 Data/TrainingData/HumanMine/*
 Data/TrainingData/MySQL/*
 Data/TrainingData/Neo4j/*
