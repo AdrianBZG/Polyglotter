@@ -4,6 +4,7 @@ import string
 import networkx as nx
 from numpy.random import choice as numpy_choice
 from sklearn.model_selection import train_test_split
+from Utils import generateRandomString
 import matplotlib.pyplot as plt
 import pickle
 
@@ -26,8 +27,10 @@ constraintLogicTextToSymbolDict["lower than"] = "<"
 constraintLogicTextToSymbolDict["less than"] = "<"
 
 def constraintLogicTextToSymbol(constraint):
-    constraintSplit = constraint.split("@")
-    return constraintLogicTextToSymbolDict[constraintSplit[0].strip()] + " @value"
+    #constraintSplit = constraint.split("@")
+    transformedConstraint = ' '.join([constraintLogicTextToSymbolDict.get(i, i) for i in constraint.split()])
+    #return constraintLogicTextToSymbolDict[constraintSplit[0].strip()] + " @value"
+    return transformedConstraint
 
 # General random query generation class
 class GenerateRandomQueries(ABC):
@@ -286,7 +289,7 @@ class GenerateRandomQueries(ABC):
    
             if(chooseAttributeConstraintOrNot):
                 constraintLogic = numpy_choice(["=","<",">","<=",">=", "equal to", "less or equal", "greater or equal", "at least", "at most", "equals", "is", "greater than", "higher than", "lower than", "less than"], p=[1/16]*16)
-                schemaGraph.nodes[currNode]["constraints"][attr] = constraintLogic + " " + "@VALUE"
+                schemaGraph.nodes[currNode]["constraints"][attr] = constraintLogic + " " + generateRandomString(random.randint(2,10))
                 nrChosenConstraints += 1
                 alreadyChosenAttributes.append(attr)
                 break
@@ -355,7 +358,7 @@ class GenerateRandomQueries(ABC):
                 chooseAttributeConstraintOrNot = numpy_choice([0,1], p=[1-constraintChoiceProbability, constraintChoiceProbability])
                 if(chooseAttributeConstraintOrNot):
                     constraintLogic = numpy_choice(["=","<",">","<=",">=", "equal to", "less or equal", "greater or equal", "at least", "at most", "equals", "is", "greater than", "higher than", "lower than", "less than"], p=[1/16]*16)
-                    schemaGraph.nodes[currNode]["constraints"][attr] = constraintLogic + " " + "@VALUE"
+                    schemaGraph.nodes[currNode]["constraints"][attr] = constraintLogic + " " + generateRandomString(random.randint(2,10))
                     nrChosenConstraints += 1
                     alreadyChosenAttributes.append(attr)
                     break
@@ -437,7 +440,7 @@ class GenerateRandomQueries(ABC):
    
             if(chooseAttributeConstraintOrNot):
                 constraintLogic = numpy_choice(["=","<",">","<=",">=", "equal to", "less or equal", "greater or equal", "at least", "at most", "equals", "is", "greater than", "higher than", "lower than", "less than"], p=[1/16]*16)
-                schemaGraph.nodes[currNode]["constraints"][attr] = constraintLogic + " " + "@VALUE"
+                schemaGraph.nodes[currNode]["constraints"][attr] = constraintLogic + " " + generateRandomString(random.randint(2,10))
                 nrChosenConstraints += 1
                 alreadyChosenAttributes.append(attr)
                 break
@@ -500,7 +503,7 @@ class GenerateRandomQueries(ABC):
                 chooseAttributeConstraintOrNot = numpy_choice([0,1], p=[1-constraintChoiceProbability, constraintChoiceProbability])
                 if(chooseAttributeConstraintOrNot):
                     constraintLogic = numpy_choice(["=","<",">","<=",">=", "equal to", "less or equal", "greater or equal", "at least", "at most", "equals", "is", "greater than", "higher than", "lower than", "less than"], p=[1/16]*16)
-                    schemaGraph.nodes[currNode]["constraints"][attr] = constraintLogic + " " + "@VALUE"
+                    schemaGraph.nodes[currNode]["constraints"][attr] = constraintLogic + " " + generateRandomString(random.randint(2,10))
                     nrChosenConstraints += 1
                     alreadyChosenAttributes.append(attr)
                     break

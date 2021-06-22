@@ -50,10 +50,15 @@ class TranslationToQueryGraph:
                 print("cannot remove tmp file")
                 pass
 
-    def obtainSentenceModelPrediction(self, inputSentence = "Give me productDescription, priceEach from products, orderdetails where productLine < vLhMbeQtA, quantityOrdered < zNlseUUZQIaVBnmH", n_best=1, beam_size=5, modelCheckpoint='1000'):
+    def obtainSentenceModelPrediction(self, inputSentence = "Give me productDescription, priceEach from products, orderdetails where productLine < vLhMbeQtA, quantityOrdered < zNlseUUZQIaVBnmH", n_best=1, beam_size=5, modelCheckpoint='1000', fromFile=False):
+        predictions = list()
         try:
             # First get t he schema in-place to do the appropriate replacements
             schemaMetadata = self.schema['graph']
+
+            elementSplitValue = 2
+            if "WikiSQL" in self.model:
+                elementSplitValue = 1
     
             # Re-label to lower the nodes
             nodelist = schemaMetadata.nodes()
@@ -70,22 +75,33 @@ class TranslationToQueryGraph:
                     attributeNameMap[attribute.lower()] = attribute
 
             # Create temp file for the translation
-            inputSentence = inputSentence.lower()
-            tempFile = self.create_tmp_file(inputSentence)
-            FNULL = open(os.devnull, 'w')
+            if not fromFile:
+                inputSentence = inputSentence.lower()
+                tempFile = self.create_tmp_file(inputSentence)
+                FNULL = open(os.devnull, 'w')
 
+                OpenNMTcmd = 'onmt_translate -batch_size 32 -beam_size ' + str(beam_size) +  ' -model ' + self.modelsDir + 'model-' + self.model + '_step_' + str(modelCheckpoint) + '.pt -src ' + tempFile + ' -output ' + self.translationsOutputDir + 'translation.out -replace_unk -n_best ' + str(n_best)
+                print(OpenNMTcmd)
+                process = subprocess.Popen(OpenNMTcmd, shell=True, stdout=FNULL, stderr=subprocess.STDOUT)
+                process.wait()
 
-            OpenNMTcmd = 'onmt_translate -batch_size 256 -beam_size ' + str(beam_size) +  ' -model ' + self.modelsDir + 'model-' + self.model + '_step_' + str(modelCheckpoint) + '.pt -src ' + tempFile + ' -output ' + self.translationsOutputDir + 'translation.out -replace_unk -n_best ' + str(n_best)
-            process = subprocess.Popen(OpenNMTcmd, shell=True, stdout=FNULL, stderr=subprocess.STDOUT)
-            process.wait()
-
-            self.delete_tmp_file(tempFile)
+                self.delete_tmp_file(tempFile)
+            else:
+                FNULL = open(os.devnull, 'w')
+                print(inputSentence)
+                OpenNMTcmd = 'onmt_translate -batch_size 32 -beam_size ' + str(beam_size) +  ' -model ' + self.modelsDir + 'model-' + self.model + '_step_' + str(modelCheckpoint) + '.pt -src ' + inputSentence + ' -output ' + self.translationsOutputDir + 'translation.out -replace_unk -n_best ' + str(n_best)
+                print(OpenNMTcmd)
+                process = subprocess.Popen(OpenNMTcmd, shell=True, stdout=FNULL, stderr=subprocess.STDOUT)
+                process.wait()
 
             # Read the output
-            predictions = list()
-
             with open(self.translationsOutputDir + "translation.out") as f:
                 lines = f.readlines()
+                print("===1===")
+                print(lines)
+                print(len(lines))
+                print("===END 1===")
+
                 for line in lines:
                     line = line.strip().rstrip()
                     line = ' '.join([classNameMap.get(i, i) for i in line.split()])
@@ -100,11 +116,12 @@ class TranslationToQueryGraph:
                             elementSplit = element.strip().rstrip().split(" ")
 
                             # Is constraint?
-                            if len(elementSplit) > 2:
+                            if len(elementSplit) > elementSplitValue:
                                 prediction["prediction"]["constraints"].append(element.strip())
                             else:
                                 prediction["prediction"]["attributes"].append(elementSplit[0].strip())
-                                prediction["prediction"]["classes"].append(elementSplit[1].strip())
+                                if "WikiSQL" not in self.model:
+                                    prediction["prediction"]["classes"].append(elementSplit[1].strip())
                             
                         predictions.append(prediction)
                     except Exception as e:
@@ -142,16 +159,16 @@ class TranslationToQueryGraph:
 
             try:
                 for i in range (0,len(translationClassesSet)-1):
-                    minPath = nx.bidirectional_shortest_path(spanning_tree, translationClassesSet[i], translationClassesSet[i+1])
+                    minPath = nx.bidirectional_shortest_path(spanning_tree, translationClassesSet[i].lower(), translationClassesSet[i+1].lower())
                     
                     for j in range (0,len(minPath)-1):
                         queryGraph.add_edge(minPath[j], minPath[j+1])
             except nx.exception.NetworkXNoPath as e:
-                print("No path was found between " + translationClassesSet[i] + " and " + translationClassesSet[i+1] + ". Skipping query graph creation.")
+                print("No path was found between " + translationClassesSet[i].lower() + " and " + translationClassesSet[i+1].lower() + ". Skipping query graph creation.")
                 queryGraphs.append("")
                 continue
             except nx.exception.NodeNotFound:
-                print("Either " + translationClassesSet[i] + " or " + translationClassesSet[i+1] + " predicted classes were not found in the DB schema. Skipping query graph creation.")
+                print("Either " + translationClassesSet[i].lower() + " or " + translationClassesSet[i+1].lower() + " predicted classes were not found in the DB schema. Skipping query graph creation.")
                 queryGraphs.append("")
                 continue
             except Exception as e:

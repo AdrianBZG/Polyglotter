@@ -15,7 +15,7 @@ random.seed(RANDOM_SEED)
 NUM_LAYERS = 6
 NUM_HEADS = 8
 TRANSFORMER_FF = 2048
-BATCH_SIZE = 4096
+BATCH_SIZE = 256
 RNN_SIZE = 512
 WORD_VEC_SIZE = 512
 VALID_BATCH_SIZE = 8
@@ -30,6 +30,7 @@ WARMUP_STEPS = 500
 
 if __name__ == "__main__":
     training_set_sizes = [1000,5000,10000,25000,50000,100000,1000000]
+    training_set_sizes = [1000000]
   
     for training_set_size in training_set_sizes:
         print("### TRAINING MODEL - INFORMATION ###")

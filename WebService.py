@@ -43,7 +43,18 @@ def predict_query():
         # Obtain predictions from the model
         modelPredictions = TranslationToQueryGraphObj.obtainSentenceModelPrediction(query, n_best=candidates_considered, beam_size=beam_size, modelCheckpoint='2000')
 
-        return Response(json.dumps(modelPredictions), mimetype='application/json')
+        # Get the English echo of the queries
+        queryGraphs = TranslationToQueryGraphObj.obtainQueryGraph(modelPredictions, debug=False)
+        englishFromQueryGraphs = list()
+
+        for inx, queryGraph in enumerate(queryGraphs):
+            if(isinstance(queryGraph, str)):
+                continue
+            
+            englishFromQueryGraph = TranslationToQueryGraphObj.getEnglishFromQueryGraph(queryGraph, showGraph=False)
+            englishFromQueryGraphs.append(englishFromQueryGraph)
+
+        return Response(json.dumps({'modelPredictions': modelPredictions, 'english_echo': englishFromQueryGraphs}), mimetype='application/json')
     except Exception as e:
         print(e)
         return json.dumps({'Failure':0})

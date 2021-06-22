@@ -1,4 +1,20 @@
 import random
+import string
+
+def generateRandomString(size):
+    option = random.randint(0,4)
+    if option == 0:
+        return ''.join(random.choices(string.digits, k=size))
+    elif option == 1:
+        return ''.join(random.choices(string.ascii_uppercase, k=size))
+    elif option == 2:
+        return ''.join(random.choices(string.ascii_lowercase, k=size))
+    elif option == 3:
+        return ''.join(random.choices(string.ascii_uppercase + string.ascii_lowercase + string.digits, k=size))
+    else:
+        return ''.join(random.choices(string.ascii_uppercase + string.ascii_lowercase, k=size))
+
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=size))
 
 # Auxiliary functions to generate a higher English variability with random selection of ordering
 def alternateEnglishOrdering(subgraph):

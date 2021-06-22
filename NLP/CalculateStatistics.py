@@ -55,11 +55,12 @@ def calculate_global_accuracy(candidate_split_n_best, references):
 if __name__ == "__main__":
     dataDir = "../Data/TrainingData/"
     problems = ["HumanMine"]
-    training_set_sizes = [50000]
+    training_set_sizes = [1000000]
     splits = ["test"]
 
     n_bests = [1, 3, 5]
-    model_checkpoint = 10000
+    model_checkpoint = 2000
+    beam_size = 5
 
     for problem in problems:
         for training_set_size in training_set_sizes:
@@ -68,8 +69,11 @@ if __name__ == "__main__":
                     print("Statistics for: " + str(problem) + ", " + str(training_set_size) + ", " + str(split) + ", n_best = " + str(n_best))
                     # Get a model, translate and save it, then compare accuracies with a reference file
                     TranslationToQueryGraphobj = TranslationToQueryGraph(translationsOutputDir = "Translations/", modelsDir = "Models/", schemaDir="../Data/Schemas/" + problem + "dbSchema.obj", model=problem + "-" + str(training_set_size))
-                    modelPredictions = TranslationToQueryGraphobj.obtainSentenceModelPredictionFile(dataDir + problem + "/" + str(training_set_size) + "/src-dataset-" + str(training_set_size) + "-" + split + ".txt", n_best=n_best, beam_size=1, modelCheckpoint=model_checkpoint)[3]
-                    candidate, candidate_split_n_best, references, references_split = formatPredictions(modelPredictions, dataDir + problem + "/" + str(training_set_size) + "/tgt-dataset-" + str(training_set_size) + "-" + split + ".txt", n_best)
+                    modelPredictions = TranslationToQueryGraphobj.obtainSentenceModelPrediction(dataDir + problem + "/" + str(training_set_size) + "/src-dataset-" + str(training_set_size) + "-" + split + ".txt", n_best=n_best, beam_size=beam_size, modelCheckpoint=model_checkpoint, fromFile=True)
+                    
+                    print(len(modelPredictions))
+                    predictions = [prediction["prediction"]["raw"] for prediction in modelPredictions]
 
+                    candidate, candidate_split_n_best, references, references_split = formatPredictions(predictions, dataDir + problem + "/" + str(training_set_size) + "/tgt-dataset-" + str(training_set_size) + "-" + split + ".txt", n_best)
                     accuracy = calculate_global_accuracy(candidate_split_n_best, references_split)
                     print("Accuracy Score (Global): " + str(accuracy*100) + "%")

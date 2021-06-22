@@ -31,6 +31,7 @@ class HumanMineGenerateRandomQueries(GenerateRandomQueries):
 if __name__ == "__main__":
     HumanMineGenerateRandomQueries = HumanMineGenerateRandomQueries("../Data/Schemas/HumanMinedbSchema.obj")
     training_set_sizes = [1000,5000,10000,25000,50000,100000,1000000]
+    training_set_sizes = [1000000]
     query_complexity_limits = [5,5,2]
     
     for training_set_size in training_set_sizes:
