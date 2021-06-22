@@ -53,6 +53,7 @@ class TranslationToQueryGraph:
     def obtainSentenceModelPrediction(self, inputSentence = "Give me productDescription, priceEach from products, orderdetails where productLine < vLhMbeQtA, quantityOrdered < zNlseUUZQIaVBnmH", n_best=1, beam_size=5, modelCheckpoint='1000', fromFile=False):
         predictions = list()
         try:
+            
             # First get t he schema in-place to do the appropriate replacements
             schemaMetadata = self.schema['graph']
 
