@@ -1,5 +1,7 @@
 FROM python:3.9.5-slim-buster
 
+ARG GDRIVE_MODEL_URL=
+
 WORKDIR /usr/src/app
 
 COPY requirements.txt ./
