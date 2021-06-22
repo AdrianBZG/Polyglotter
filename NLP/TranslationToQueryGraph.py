@@ -82,26 +82,19 @@ class TranslationToQueryGraph:
                 FNULL = open(os.devnull, 'w')
 
                 OpenNMTcmd = 'onmt_translate -batch_size 32 -beam_size ' + str(beam_size) +  ' -model ' + self.modelsDir + 'model-' + self.model + '_step_' + str(modelCheckpoint) + '.pt -src ' + tempFile + ' -output ' + self.translationsOutputDir + 'translation.out -replace_unk -n_best ' + str(n_best)
-                print(OpenNMTcmd)
                 process = subprocess.Popen(OpenNMTcmd, shell=True, stdout=FNULL, stderr=subprocess.STDOUT)
                 process.wait()
 
                 self.delete_tmp_file(tempFile)
             else:
                 FNULL = open(os.devnull, 'w')
-                print(inputSentence)
                 OpenNMTcmd = 'onmt_translate -batch_size 32 -beam_size ' + str(beam_size) +  ' -model ' + self.modelsDir + 'model-' + self.model + '_step_' + str(modelCheckpoint) + '.pt -src ' + inputSentence + ' -output ' + self.translationsOutputDir + 'translation.out -replace_unk -n_best ' + str(n_best)
-                print(OpenNMTcmd)
                 process = subprocess.Popen(OpenNMTcmd, shell=True, stdout=FNULL, stderr=subprocess.STDOUT)
                 process.wait()
 
             # Read the output
             with open(self.translationsOutputDir + "translation.out") as f:
                 lines = f.readlines()
-                print("===1===")
-                print(lines)
-                print(len(lines))
-                print("===END 1===")
 
                 for line in lines:
                     line = line.strip().rstrip()

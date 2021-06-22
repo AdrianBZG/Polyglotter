@@ -25,6 +25,7 @@ import concurrent.futures
 
 # Web server config
 SERVER_PORT = 1234
+thread_executor = concurrent.futures.ThreadPoolExecutor()
 REQUEST_TIMEOUT_SECONDS = 30
 
 # Load the model
@@ -40,34 +41,35 @@ def predict_query_thread(query, candidates_considered, beam_size, modelCheckpoin
 
 @app.route('/predict_query')
 def predict_query():
-    try:
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            query = str(request.args.get('query', type = str))
-            arg_beam_size = int(request.args.get('beam_size', type = int))
-            arg_candidates_considered = int(request.args.get('candidates', type = int))
+    try:        
+        query = str(request.args.get('query', type = str))
+        arg_beam_size = int(request.args.get('beam_size', type = int))
+        arg_candidates_considered = int(request.args.get('candidates', type = int))
 
-            # Parameters for the translation
-            beam_size = arg_beam_size # Number of candidates considered in each branching of the beam search tree
-            candidates_considered = arg_candidates_considered # Number of candidate translations that will be finally obtained from the model (i.e. if it's 2, you will get 2 queries, if 3, 3 queries, and so on)
+        # Parameters for the translation
+        beam_size = arg_beam_size # Number of candidates considered in each branching of the beam search tree
+        candidates_considered = arg_candidates_considered # Number of candidate translations that will be finally obtained from the model (i.e. if it's 2, you will get 2 queries, if 3, 3 queries, and so on)
 
-            # Obtain predictions from the model
-            future = executor.submit(predict_query_thread, query, candidates_considered, beam_size, '2000')
-            modelPredictions = future.result(timeout=REQUEST_TIMEOUT_SECONDS)
+        # Obtain predictions from the model
+        future = thread_executor.submit(predict_query_thread, query, candidates_considered, beam_size, '2000')
+        modelPredictions = future.result(timeout=REQUEST_TIMEOUT_SECONDS)
 
-            # Get the English echo of the queries
-            queryGraphs = TranslationToQueryGraphObj.obtainQueryGraph(modelPredictions, debug=False)
-            englishFromQueryGraphs = list()
+        # Get the English echo of the queries
+        queryGraphs = TranslationToQueryGraphObj.obtainQueryGraph(modelPredictions, debug=False)
+        englishFromQueryGraphs = list()
 
-            for inx, queryGraph in enumerate(queryGraphs):
-                if(isinstance(queryGraph, str)):
-                    continue
-                
-                englishFromQueryGraph = TranslationToQueryGraphObj.getEnglishFromQueryGraph(queryGraph, showGraph=False)
-                englishFromQueryGraphs.append(englishFromQueryGraph)
+        for inx, queryGraph in enumerate(queryGraphs):
+            if(isinstance(queryGraph, str)):
+                continue
+            
+            englishFromQueryGraph = TranslationToQueryGraphObj.getEnglishFromQueryGraph(queryGraph, showGraph=False)
+            englishFromQueryGraphs.append(englishFromQueryGraph)
 
-            return Response(json.dumps({'nrPredictions': len(modelPredictions), 'modelPredictions': modelPredictions, 'english_echo': englishFromQueryGraphs}), mimetype='application/json')
+        thread_executor.shutdown(wait=False)
+        return Response(json.dumps({'nrPredictions': len(modelPredictions), 'modelPredictions': modelPredictions, 'english_echo': englishFromQueryGraphs}), mimetype='application/json')
     except concurrent.futures.TimeoutError:
         print("Timeout...")
+        thread_executor.shutdown(wait=False)
         return json.dumps({'Timeout':REQUEST_TIMEOUT_SECONDS})
     except Exception as e:
         print(e)
