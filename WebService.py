@@ -54,7 +54,7 @@ def predict_query():
             englishFromQueryGraph = TranslationToQueryGraphObj.getEnglishFromQueryGraph(queryGraph, showGraph=False)
             englishFromQueryGraphs.append(englishFromQueryGraph)
 
-        return Response(json.dumps({'modelPredictions': modelPredictions, 'english_echo': englishFromQueryGraphs}), mimetype='application/json')
+        return Response(json.dumps({'nrPredictions': len(modelPredictions), 'modelPredictions': modelPredictions, 'english_echo': englishFromQueryGraphs}), mimetype='application/json')
     except Exception as e:
         print(e)
         return json.dumps({'Failure':0})
