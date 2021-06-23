@@ -1,3 +1,1 @@
-value synonym ; url dataset ; id dataset = 12345 ; annotationversion strain ; name probeset
-value synonym ; id synonym = != ; url dataset ; annotationversion strain ; name probeset
-value synonym ; url dataset ; annotationversion strain ; name probeset ; id probeset = 12345
+value synonym ; id synonym lower than @value ; url dataset ; annotationversion strain ; name probeset

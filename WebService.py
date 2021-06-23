@@ -26,7 +26,7 @@ import concurrent.futures
 # Web server config
 SERVER_PORT = 1234
 thread_executor = concurrent.futures.ThreadPoolExecutor()
-REQUEST_TIMEOUT_SECONDS = 30
+REQUEST_TIMEOUT_SECONDS = 1
 
 # Load the model
 TranslationToQueryGraphObj = TranslationToQueryGraph(translationsOutputDir = "./NLP/Translations/", modelsDir = "./NLP/Models/", schemaDir="./Data/Schemas/HumanMinedbSchema.obj", model="HumanMine-1000000")
@@ -65,11 +65,9 @@ def predict_query():
             englishFromQueryGraph = TranslationToQueryGraphObj.getEnglishFromQueryGraph(queryGraph, showGraph=False)
             englishFromQueryGraphs.append(englishFromQueryGraph)
 
-        thread_executor.shutdown(wait=False)
         return Response(json.dumps({'nrPredictions': len(modelPredictions), 'modelPredictions': modelPredictions, 'english_echo': englishFromQueryGraphs}), mimetype='application/json')
     except concurrent.futures.TimeoutError:
         print("Timeout...")
-        thread_executor.shutdown(wait=False)
         return json.dumps({'Timeout':REQUEST_TIMEOUT_SECONDS})
     except Exception as e:
         print(e)
