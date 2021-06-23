@@ -26,7 +26,7 @@ import concurrent.futures
 # Web server config
 SERVER_PORT = 1234
 thread_executor = concurrent.futures.ThreadPoolExecutor()
-REQUEST_TIMEOUT_SECONDS = 1
+REQUEST_TIMEOUT_SECONDS = 60
 
 # Load the model
 TranslationToQueryGraphObj = TranslationToQueryGraph(translationsOutputDir = "./NLP/Translations/", modelsDir = "./NLP/Models/", schemaDir="./Data/Schemas/HumanMinedbSchema.obj", model="HumanMine-1000000")
